@@ -1,99 +1,84 @@
-﻿using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-int[,] trainData =
+﻿
+int[,] trainOR =
 {
-    { 1 , 2 },
-    { 2 , 4 },
-    { 3 , 6 },
-    { 4 , 8 },
-
+    {0,0,0 },
+    {0,1,1 },
+    {1,0,1 },
+    {1,1,1 }
 };
 
-double rand(double min,double max)
+int trainLength = 4;
+
+double activation(double x)
 {
-    var r = new Random().Next();
-    return (r % (max - min) + min) + ((double)r / int.MaxValue);
+    return (Math.Atan((x - 0.5) * 1000) + Math.PI / 2)/Math.PI;
 }
 
-double cost(double w,double b)
+double cost(double w1,double w2,double b)
 {
-    int trainCount = trainData.Length / 2;
     double result = 0;
-    for (int i = 0; i < trainCount; i++)
+    for(int i = 0;i < trainLength; i++)
     {
-        double x = trainData[i, 0];
-        double y = x * w + b;
-        double def = (y - trainData[i, 1]);
-        result += def * def;
+        int x1 = trainOR[i,0];
+        int x2 = trainOR[i, 1];
+        double deff = activation(w1 * x1 + w2 * x2 + b) - trainOR[i,2];
+        result += deff * deff * 5;
     }
 
-    return result / trainCount;
+    return result;
+}
+
+void printXOR(double w1,double w2,double b)
+{
+    
+    Console.WriteLine("\n-----------------------------");
+    Console.WriteLine($" x1  x2 =>  y  (expected)");
+    for (int i = 0; i < trainLength; i++)
+    {
+        int x1 = trainOR[i, 0];
+        int x2 = trainOR[i, 1];
+        int expected_y = trainOR[i, 2];
+        float y = (float)activation(w1 * x1 + w2 * x2 + b);
+
+        Console.WriteLine($" {x1} || {x2} => {y,10} (expected : {expected_y})");
+    }
+    Console.WriteLine("-----------------------------");
 }
 
 double train(double rate,double eps)
 {
-
-
-    double w = 7;//rand(0, 10);
-    double b = 5;// rand(0, 10);
-
-
-    for (int i = 0; i < 5000; i++)
-    {
-
-        double c = cost(w, b);
-        double deff = (cost(w + eps, b) - c);
-        w -= deff * rate;
-
-        deff = (cost(w, b + eps) - c);
-
-        b -= deff * rate;
-
-
-        //.WriteLine($"Cost : {c,10}, w = {w,5}, b = {b,5}" );
-    }
-
-    double finalCost = cost(w, b);
-
-    //if (finalCost < 0.2)
-    //{
-    //    Console.WriteLine($"Final Cost : {finalCost,10}, w = {w,5}, b = {b,5}");
-    //    Console.WriteLine("Result : " + w * 5);
-    //}
-    return finalCost;
-}
-
-void trainTheTrainer(double w_rate,double w_eps) 
-{
-    double eps = 0.01f;
-    double rate = 0.000001f;
     double c = 100;
-    for(int i = 0; i < 100_000; i++)
+    double w1 = 4, w2 = 7, b = 2;
+
+    for(int i = 0; i < 100_000;i++)
     {
-        c = train(w_rate, w_eps); 
-        double dw_rate = (train(w_rate + eps, w_eps      ) - c) / eps;
-        double dw_eps  = (train(w_rate      , w_eps + eps) - c) / eps;
+        c = cost(w1, w2, b);
 
-        w_rate -= dw_rate * rate;
-        w_eps  -= dw_eps  * rate;
+        double dw1 = (cost(w1 + eps, w2      , b + eps) - c) / eps;
+        double dw2 = (cost(w1      , w2 + eps, b + eps) - c) / eps;
+        double db  = (cost(w1      , w2      , b + eps) - c) / eps;
 
-        if(i % 1000 == 0)
-            Console.WriteLine($"\nround {i,8}, w rate : {w_rate,8}, w eps : {w_eps,8} => cost = {c,8}");
+        w1 -= dw1 * rate;
+        w2 -= dw2 * rate;
+        b  -= db  * rate;
+
+        //Console.WriteLine($"Result : w1 : {w1,6}, w2 : {w2,6}, b : {b,6}");
+        if (i % 1000 == 0) {
+            Console.WriteLine($"Result : w1 : {w1,25}, w2 : {w2,25}, b : {b,25} => Cost : {c,12}");
+            printXOR(w1, w2, b);
+
+        }
     }
-    Console.WriteLine("End");
-            Console.WriteLine($"\nround {100_000,8}, w rate : {w_rate,8}, w eps : {w_eps,8} => cost = {c,8}");
+
+//    Console.WriteLine($"Result : w1 : {w1,6}, w2 : {w2,6}, b : {b,6} => Cost : {c,6}");
+
+    return c;
 
 }
+
 int run()
 {
-    double eps = 0.02f;
-    double rate = 0.02f;
-
-    // The training resut : rate : 0.2481 & eps = 0.1194  in 5000 test => cost = 0.1197 
-
-    trainTheTrainer(rate, eps);
-    
+    train(0.01,0.1);
     return 0;
 }
 
